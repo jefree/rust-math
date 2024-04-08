@@ -54,11 +54,8 @@ fn str_to_stack(s: &str) -> LinkedList<Expression> {
     let chars: Vec<char> = s.trim().chars().collect();
     let total_chars = s.trim().chars().count();
 
-    println!("{:?}", chars);
-
     while i < total_chars {
-        let ch = chars[dbg!(i)];
-        println!("{ch}");
+        let ch = chars[i];
         i += 1;
 
         if ch == ' ' {
@@ -87,7 +84,6 @@ fn str_to_stack(s: &str) -> LinkedList<Expression> {
 
 fn main() {
     let input = "2 + 3 * 4 / 2"; // 8
-
     let stack = str_to_stack(input);
 
     println!("{:?}", stack);
