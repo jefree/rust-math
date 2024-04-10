@@ -1,6 +1,6 @@
 use std::collections::LinkedList;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 enum Token {
     Number(f32),
     Add,
@@ -82,9 +82,93 @@ fn str_to_list(s: &str) -> LinkedList<Token> {
     tokens
 }
 
+fn infix_to_postfix(infix: LinkedList<Token>) -> LinkedList<Token> {
+    let mut postfix = LinkedList::new();
+    let mut stack = LinkedList::new();
+
+    for token in infix {
+        println!("token: {:?}", token);
+        println!("stack: {:?}", stack);
+        println!("postfix: {:?}", postfix);
+        println!("------------");
+
+        if let Token::Number(_) = token {
+            postfix.push_back(token);
+            continue;
+        }
+
+        if let Token::LParenthesis = token {
+            stack.push_front(token);
+            continue;
+        }
+
+        if let Token::RParenthesis = token {
+            loop {
+                let top = stack.pop_front();
+
+                if let None | Some(Token::LParenthesis) = top {
+                    break;
+                }
+
+                postfix.push_back(top.unwrap());
+            }
+
+            continue;
+        }
+
+        let stack_op = stack.front();
+
+        if let Some(Token::LParenthesis) | None = stack_op {
+            stack.push_front(token);
+            continue;
+        }
+
+        let stack_op = stack_op.unwrap();
+
+        if prec(&token) > prec(stack_op) {
+            stack.push_front(token);
+        } else {
+            loop {
+                let next = stack.front();
+
+                if let None | Some(&Token::LParenthesis) = next {
+                    stack.push_front(token);
+                    break;
+                }
+
+                if prec(&token) > prec(&next.unwrap()) {
+                    stack.push_front(token);
+                    break;
+                }
+
+                postfix.push_back(stack.pop_front().unwrap());
+            }
+        }
+    }
+
+    for remaining in stack {
+        postfix.push_back(remaining);
+    }
+
+    postfix
+}
+
+fn prec(token: &Token) -> u8 {
+    match token {
+        Token::Multiply | Token::Divide => 2,
+        Token::Add | Token::Substract => 1,
+        _ => 0,
+    }
+}
+
 fn main() {
-    let input = "(22 + 3) * 44 / 2"; // 550
+    let input = "(1 + 2) * 3 / 4"; //
     let tokens = str_to_list(input);
 
-    println!("{:?}", tokens);
+    println!("INFIX: {:?}", tokens);
+    println!("--------");
+
+    let postfix = infix_to_postfix(tokens);
+
+    println!("POSTFIX: {:?}", postfix);
 }
