@@ -1,4 +1,6 @@
+use regex::Regex;
 use std::collections::LinkedList;
+use std::io;
 
 #[derive(Debug, Copy, Clone)]
 enum Token {
@@ -87,11 +89,6 @@ fn infix_to_postfix(infix: LinkedList<Token>) -> LinkedList<Token> {
     let mut stack = LinkedList::new();
 
     for token in infix {
-        println!("token: {:?}", token);
-        println!("stack: {:?}", stack);
-        println!("postfix: {:?}", postfix);
-        println!("------------");
-
         if let Token::Number(_) = token {
             postfix.push_back(token);
             continue;
@@ -153,6 +150,38 @@ fn infix_to_postfix(infix: LinkedList<Token>) -> LinkedList<Token> {
     postfix
 }
 
+fn process_postfix(postfix: LinkedList<Token>) -> f32 {
+    let mut stack = LinkedList::new();
+
+    for token in postfix {
+        if let Token::Number(operand) = token {
+            stack.push_front(operand);
+        } else {
+            let right = stack
+                .pop_front()
+                .expect("operand must be available in stack");
+
+            let left = stack
+                .pop_front()
+                .expect("operand must be available in stack");
+
+            stack.push_front(operate(left, right, token));
+        }
+    }
+
+    stack.pop_front().unwrap()
+}
+
+fn operate(left: f32, right: f32, operator: Token) -> f32 {
+    match operator {
+        Token::Add => left + right,
+        Token::Substract => left - right,
+        Token::Divide => left / right,
+        Token::Multiply => left * right,
+        other => panic!("unexpected operator {:?}", other),
+    }
+}
+
 fn prec(token: &Token) -> u8 {
     match token {
         Token::Multiply | Token::Divide => 2,
@@ -162,13 +191,21 @@ fn prec(token: &Token) -> u8 {
 }
 
 fn main() {
-    let input = "(1 + 2) * 3 / 4"; //
-    let tokens = str_to_list(input);
+    let mut input = String::new();
 
-    println!("INFIX: {:?}", tokens);
-    println!("--------");
+    println!("Please enter math expression below:");
+    io::stdin().read_line(&mut input).unwrap();
 
+    let re = Regex::new(r"\A[0123456789+\-*\/\(\)\s]+\z").unwrap();
+
+    if !re.is_match(&input) {
+        println!("invalid input. it must contain only numbers, +, -, *, / or parethensis");
+        return;
+    }
+
+    let tokens = str_to_list(&input);
     let postfix = infix_to_postfix(tokens);
+    let result = process_postfix(postfix);
 
-    println!("POSTFIX: {:?}", postfix);
+    println!("Result: {}", result);
 }
